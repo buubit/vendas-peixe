@@ -7,7 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 /// Repositório do GitHub ("usuario/repositorio") de onde vêm as atualizações.
 /// Vazio = verificação desligada.
-const repoAtualizacao = '';
+const repoAtualizacao = 'buubit/vendas-peixe';
 
 class Atualizacao {
   final String versao;
