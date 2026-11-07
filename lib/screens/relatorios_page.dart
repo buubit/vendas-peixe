@@ -69,6 +69,11 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
         porPeixe[i.nome] = (atual.$1 + i.qtd, i.unidade, atual.$3 + i.subtotal);
       }
     }
+    final promos = [
+      for (final p in pedidos)
+        for (final i in p.itens)
+          if (i.promo) (p, i),
+    ];
     final clientes = porCliente.entries.toList()..sort((x, y) => y.value.compareTo(x.value));
     final peixes = porPeixe.entries.toList()..sort((x, y) => y.value.$3.compareTo(x.value.$3));
 
@@ -103,6 +108,23 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
           comissao: pedidos.fold(0.0, (s, p) => s + p.comissao),
           extra: Padding(padding: const EdgeInsets.only(top: 8), child: Text('${pedidos.length} pedido(s)')),
         ),
+        if (promos.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Card(
+            color: Colors.red.shade50,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('⚠ ${ItemPedido.avisoPromo} (${promos.length})',
+                    style: TextStyle(color: Colors.red.shade800, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                for (final (p, i) in promos)
+                  Text('${brCurto(p.data)} · ${p.clienteNome} · ${i.nome}: ${moeda(i.preco)}'
+                      '${i.precoTabela != null ? ' (tabela ${moeda(i.precoTabela!)})' : ''}'),
+              ]),
+            ),
+          ),
+        ],
         const SizedBox(height: 16),
         Text('Por cliente', style: tema.textTheme.titleMedium),
         if (clientes.isEmpty) const Padding(padding: EdgeInsets.all(8), child: Text('Sem vendas no período.')),

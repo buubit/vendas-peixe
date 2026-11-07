@@ -98,7 +98,13 @@ class _FechamentoScreenState extends State<FechamentoScreen> {
                       for (final f in lista)
                         ListTile(
                           title: Text(f.clienteNome, style: const TextStyle(fontSize: 17)),
-                          subtitle: Text('${f.pedidos} pedido(s) · comissão ${moeda(arred(f.comissao))}'),
+                          subtitle: Text.rich(TextSpan(children: [
+                            TextSpan(text: '${f.pedidos} pedido(s) · comissão ${moeda(arred(f.comissao))}'),
+                            if (f.promos > 0)
+                              TextSpan(
+                                  text: '\n⚠ ${f.promos} item(ns) com preço promocional',
+                                  style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold)),
+                          ])),
                           trailing: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.end,
@@ -249,7 +255,11 @@ class _FechamentoDetalhePageState extends State<FechamentoDetalhePage> {
                     Expanded(child: Text(br(p.data), style: tema.textTheme.titleSmall)),
                     Text(moeda(p.total), style: tema.textTheme.titleMedium),
                   ]),
-                  for (final i in p.itens) Text('• ${i.nome}: ${i.descricao} = ${moeda(i.subtotal)}'),
+                  for (final i in p.itens) ...[
+                    Text('• ${i.nome}: ${i.descricao} = ${moeda(i.subtotal)}'),
+                    if (i.promo)
+                      Text('   ${i.aviso}', style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold)),
+                  ],
                 ]),
               ),
             ),

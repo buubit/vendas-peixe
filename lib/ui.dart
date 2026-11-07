@@ -39,6 +39,7 @@ String msgPedido(Pedido p) {
   final b = StringBuffer('*Pedido ${br(p.data)}*\n${p.clienteNome}\n\n');
   for (final i in p.itens) {
     b.writeln('• ${i.nome}: ${i.descricao} = ${moeda(i.subtotal)}');
+    if (i.promo) b.writeln('   *${i.aviso}*');
   }
   final q = p.quinzena;
   b.write('\n*Total: ${moeda(p.total)}*\n');
@@ -53,6 +54,7 @@ String msgExtrato(String nome, Quinzena q, List<Pedido> peds) {
     b.write('\n*${brCurto(p.data)}* — ${moeda(p.total)}\n');
     for (final i in p.itens) {
       b.writeln('   • ${i.nome}: ${i.descricao}');
+      if (i.promo) b.writeln('     *${i.aviso}*');
     }
     total += p.total;
   }
@@ -75,7 +77,8 @@ String msgResumo(Quinzena q, List<Fechamento> lista) {
   final b = StringBuffer('*Resumo da quinzena ${q.rotulo}*\n\n');
   var total = 0.0, com = 0.0;
   for (final f in lista) {
-    b.writeln('• ${f.clienteNome}: ${moeda(f.total)}${f.recebido ? ' ✅' : ''}');
+    b.writeln('• ${f.clienteNome}: ${moeda(f.total)}${f.recebido ? ' ✅' : ''}'
+        '${f.promos > 0 ? ' ⚠ ${ItemPedido.avisoPromo}' : ''}');
     total += f.total;
     com += f.comissao;
   }

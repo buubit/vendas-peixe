@@ -40,7 +40,7 @@ void main() {
     expect(l.first.categoria, 'Salmão');
   });
 
-  test('migração v1 -> v2 mantém dados e não duplica produto existente', () async {
+  test('migração v1 -> v3 mantém dados e não duplica produto existente', () async {
     final path = await Db.caminho();
     final v1 = await databaseFactory.openDatabase(path,
         options: OpenDatabaseOptions(
@@ -93,5 +93,26 @@ void main() {
     final l = await Db.pedidosEntre(DateTime(2026, 11, 16), DateTime(2026, 11, 30));
     expect(l.single.total, 140);
     expect(l.single.comissao, closeTo(7, 0.001));
+  });
+
+  test('item com preço promocional fica marcado e aparece no fechamento', () async {
+    final c = Cliente(nome: 'Bia');
+    await Db.salvarCliente(c);
+    final p = (await Db.peixes()).first;
+    await Db.salvarPedido(Pedido(
+      clienteId: c.id!,
+      clienteNome: c.nome,
+      data: DateTime(2026, 11, 5),
+      itens: [
+        ItemPedido(peixeId: p.id!, nome: p.nome, unidade: 'kg', qtd: 2, preco: 30, promo: true, precoTabela: 35),
+        ItemPedido(peixeId: p.id!, nome: p.nome, unidade: 'kg', qtd: 1, preco: 35),
+      ],
+    ));
+    final ped = (await Db.pedidosEntre(DateTime(2026, 11, 1), DateTime(2026, 11, 15))).single;
+    expect(ped.itens.first.promo, isTrue);
+    expect(ped.itens.first.precoTabela, 35);
+    expect(ped.itens.last.promo, isFalse);
+    final f = await Db.fechamentos(quinzena: const Quinzena(2026, 11, 1));
+    expect(f.single.promos, 1);
   });
 }

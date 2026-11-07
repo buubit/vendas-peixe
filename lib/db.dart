@@ -32,7 +32,7 @@ class Db {
 
   static Future<Database> _abrir() async => openDatabase(
         await caminho(),
-        version: 2,
+        version: 3,
         onConfigure: (db) async {
           await db.execute('PRAGMA foreign_keys = ON');
         },
@@ -41,6 +41,10 @@ class Db {
             await db.execute("ALTER TABLE peixes ADD COLUMN categoria TEXT NOT NULL DEFAULT ''");
             await db.execute('ALTER TABLE pedidos ADD COLUMN comissao REAL NOT NULL DEFAULT 5');
             await _semearCatalogo(db);
+          }
+          if (de < 3) {
+            await db.execute('ALTER TABLE itens ADD COLUMN promo INTEGER NOT NULL DEFAULT 0');
+            await db.execute('ALTER TABLE itens ADD COLUMN preco_tabela REAL');
           }
         },
         onCreate: (db, v) async {
@@ -54,7 +58,7 @@ class Db {
               'CREATE TABLE pedidos(id INTEGER PRIMARY KEY AUTOINCREMENT, cliente_id INTEGER NOT NULL REFERENCES clientes(id), data TEXT NOT NULL, total REAL NOT NULL, comissao REAL NOT NULL DEFAULT 5)');
           await db.execute('CREATE INDEX idx_pedidos_data ON pedidos(data)');
           await db.execute(
-              'CREATE TABLE itens(id INTEGER PRIMARY KEY AUTOINCREMENT, pedido_id INTEGER NOT NULL REFERENCES pedidos(id) ON DELETE CASCADE, peixe_id INTEGER NOT NULL, nome TEXT NOT NULL, unidade TEXT NOT NULL, qtd REAL NOT NULL, preco REAL NOT NULL, subtotal REAL NOT NULL)');
+              'CREATE TABLE itens(id INTEGER PRIMARY KEY AUTOINCREMENT, pedido_id INTEGER NOT NULL REFERENCES pedidos(id) ON DELETE CASCADE, peixe_id INTEGER NOT NULL, nome TEXT NOT NULL, unidade TEXT NOT NULL, qtd REAL NOT NULL, preco REAL NOT NULL, subtotal REAL NOT NULL, promo INTEGER NOT NULL DEFAULT 0, preco_tabela REAL)');
           await db.execute(
               'CREATE TABLE recebimentos(cliente_id INTEGER NOT NULL REFERENCES clientes(id) ON DELETE CASCADE, quinzena TEXT NOT NULL, valor REAL NOT NULL, data TEXT NOT NULL, PRIMARY KEY(cliente_id, quinzena))');
           await db.execute('CREATE TABLE config(chave TEXT PRIMARY KEY, valor TEXT NOT NULL)');
@@ -180,7 +184,8 @@ class Db {
   static Future<List<Pedido>> _pedidos(String where, List<Object?> args, {bool comItens = true}) async {
     final d = await _d;
     final r = await d.rawQuery(
-        'SELECT p.id, p.cliente_id, p.data, p.total, p.comissao, c.nome, c.telefone FROM pedidos p '
+        'SELECT p.id, p.cliente_id, p.data, p.total, p.comissao, c.nome, c.telefone, '
+        '(SELECT COUNT(*) FROM itens i WHERE i.pedido_id = p.id AND i.promo = 1) AS promos FROM pedidos p '
         'JOIN clientes c ON c.id = p.cliente_id WHERE $where ORDER BY p.data, p.id',
         args);
     final peds = r
@@ -192,6 +197,7 @@ class Db {
               data: deDb(m['data'] as String),
               totalSalvo: (m['total'] as num).toDouble(),
               comissaoPct: (m['comissao'] as num).toDouble(),
+              promosSalvo: m['promos'] as int,
               itens: [],
             ))
         .toList();
@@ -231,6 +237,7 @@ class Db {
               ));
       f.total = arred(f.total + p.total);
       f.comissao += p.comissao;
+      f.promos += p.promos;
       f.pedidos++;
     }
     var l = mapa.values.toList();

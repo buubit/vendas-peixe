@@ -289,7 +289,13 @@ class PedidoFormState extends State<PedidoForm> {
               for (var i = 0; i < itens.length; i++)
                 ListTile(
                   title: Text(itens[i].nome),
-                  subtitle: Text(itens[i].descricao),
+                  subtitle: Text.rich(TextSpan(children: [
+                    TextSpan(text: itens[i].descricao),
+                    if (itens[i].promo)
+                      TextSpan(
+                          text: '\n${itens[i].aviso}',
+                          style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold)),
+                  ])),
                   trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                     Text(moeda(itens[i].subtotal), style: tema.textTheme.titleMedium),
                     IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() => itens.removeAt(i))),
@@ -343,7 +349,7 @@ class PedidoFormState extends State<PedidoForm> {
             Card(
               child: ListTile(
                 title: Text(p.clienteNome),
-                subtitle: Text(p.itens.map((i) => '${i.nome} ${numero(i.qtd)}${i.unidade}').join(', ')),
+                subtitle: Text(p.itens.map((i) => '${i.nome} ${numero(i.qtd)}${i.unidade}${i.promo ? ' ⚠PROMO' : ''}').join(', ')),
                 trailing: Text(moeda(p.total), style: tema.textTheme.titleMedium),
                 onTap: () => _editarDoDia(p),
                 onLongPress: () => abrirWhatsApp(context, msgPedido(p)),

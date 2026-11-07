@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 import '../format.dart';
 import '../models.dart';
 
-/// Retorna o item e se o preço deve ser salvo como preço do cliente.
+/// Retorna o item e se o preço deve ser salvo na tabela do cliente.
+///
+/// - Produto COM preço na tabela do cliente: o preço vem travado. Marcando
+///   "Preço promocional / fora da tabela" dá para mudar só neste pedido, e o
+///   item fica marcado com aviso no balanço.
+/// - Produto SEM preço para o cliente: digita o preço e pode salvar na tabela dele.
 Future<(ItemPedido, bool)?> dialogItem(BuildContext context, Peixe peixe, double? precoCliente,
     {ItemPedido? atual}) {
   return showDialog<(ItemPedido, bool)>(
@@ -23,23 +28,34 @@ class _ItemDialog extends StatefulWidget {
 }
 
 class _ItemDialogState extends State<_ItemDialog> {
+  late final bool temTabela = widget.precoCliente != null;
+  late bool promo = widget.atual?.promo ?? false;
+  late bool salvarNaTabela = true;
   late final qtdC = TextEditingController(text: widget.atual != null ? numero(widget.atual!.qtd) : '');
-  late final precoC = TextEditingController(
-      text: (widget.atual?.preco ?? widget.precoCliente) != null
-          ? precoTxt(widget.atual?.preco ?? widget.precoCliente!)
-          : '');
-  late bool salvarPreco = widget.precoCliente == null;
+  late final precoC = TextEditingController(text: _precoInicial());
+
+  String _precoInicial() {
+    final p = widget.atual?.preco ?? widget.precoCliente;
+    return p != null ? precoTxt(p) : '';
+  }
 
   double? get qtd => lerNumero(qtdC.text);
-  double? get preco => lerNumero(precoC.text);
+  double? get preco => temTabela && !promo ? widget.precoCliente : lerNumero(precoC.text);
 
   void _ok() {
     final q = qtd, p = preco;
     if (q == null || q <= 0 || p == null || p <= 0) return;
+    final ehPromo = temTabela && promo && (p - widget.precoCliente!).abs() > 0.001;
     final item = ItemPedido(
-        peixeId: widget.peixe.id!, nome: widget.peixe.nome, unidade: widget.peixe.unidade, qtd: q, preco: p);
-    final mudou = widget.precoCliente == null || (p - widget.precoCliente!).abs() > 0.001;
-    Navigator.pop(context, (item, mudou && salvarPreco));
+      peixeId: widget.peixe.id!,
+      nome: widget.peixe.nome,
+      unidade: widget.peixe.unidade,
+      qtd: q,
+      preco: p,
+      promo: ehPromo,
+      precoTabela: ehPromo ? widget.precoCliente : null,
+    );
+    Navigator.pop(context, (item, !temTabela && salvarNaTabela));
   }
 
   @override
@@ -54,7 +70,7 @@ class _ItemDialogState extends State<_ItemDialog> {
     final u = widget.peixe.unidade;
     final q = qtd, p = preco;
     final sub = (q != null && p != null) ? arred(q * p) : null;
-    final mostrarCheck = p != null && (widget.precoCliente == null || (p - widget.precoCliente!).abs() > 0.001);
+    final travado = temTabela && !promo;
     return AlertDialog(
       title: Text(widget.peixe.nome),
       content: SingleChildScrollView(
@@ -74,23 +90,38 @@ class _ItemDialogState extends State<_ItemDialog> {
             const SizedBox(height: 12),
             TextField(
               controller: precoC,
+              enabled: !travado,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                labelText: 'Preço por $u',
+                labelText: travado ? 'Preço da tabela do cliente (por $u)' : 'Preço por $u',
                 prefixText: r'R$ ',
-                helperText: widget.precoCliente == null ? 'Cliente ainda sem preço para este peixe' : null,
+                helperText: temTabela ? null : 'Cliente ainda sem preço para este produto',
               ),
               onChanged: (_) => setState(() {}),
               onSubmitted: (_) => _ok(),
             ),
-            if (mostrarCheck)
+            if (temTabela)
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
-                value: salvarPreco,
-                onChanged: (v) => setState(() => salvarPreco = v ?? false),
-                title: const Text('Salvar como preço deste cliente'),
+                value: promo,
+                onChanged: (v) => setState(() {
+                  promo = v ?? false;
+                  if (!promo) precoC.text = precoTxt(widget.precoCliente!);
+                }),
+                title: const Text('Preço promocional / fora da tabela'),
+                subtitle: promo
+                    ? Text('Tabela: ${moeda(widget.precoCliente!)} · vale só neste pedido',
+                        style: TextStyle(color: Colors.red.shade700))
+                    : null,
+              )
+            else
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: salvarNaTabela,
+                onChanged: (v) => setState(() => salvarNaTabela = v ?? false),
+                title: const Text('Salvar na tabela deste cliente'),
               ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(sub == null ? 'Subtotal: —' : 'Subtotal: ${moeda(sub)}',
                 style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.right),
           ],
@@ -98,7 +129,7 @@ class _ItemDialogState extends State<_ItemDialog> {
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-        FilledButton(onPressed: sub == null || sub <= 0 ? null : _ok, child: const Text('Adicionar')),
+        FilledButton(onPressed: sub == null || sub <= 0 ? null : _ok, child: const Text('OK')),
       ],
     );
   }
