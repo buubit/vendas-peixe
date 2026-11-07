@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../atualizacao.dart';
 import '../config.dart';
 import '../db.dart';
 import '../format.dart';
@@ -199,10 +200,19 @@ class _MaisScreenState extends State<MaisScreen> {
           onTap: _restaurar,
         ),
         const Divider(),
+        ListTile(
+          leading: const Icon(Icons.system_update),
+          title: const Text('Verificar atualização'),
+          subtitle: FutureBuilder<String>(
+            future: versaoAtual(),
+            builder: (_, s) => Text('Versão instalada: ${s.data ?? '...'}'),
+          ),
+          onTap: () => verificarAtualizacao(context, avisarSemNovidade: true),
+        ),
         const ListTile(
           leading: Icon(Icons.info_outline),
           title: Text('Vendas de Peixe'),
-          subtitle: Text('Versão 1.1 · dados salvos só neste celular. Faça backup com frequência.'),
+          subtitle: Text('Dados salvos só neste celular. Faça backup com frequência.'),
         ),
       ]),
     );

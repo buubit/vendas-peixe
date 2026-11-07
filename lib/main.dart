@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'atualizacao.dart';
 import 'config.dart';
 import 'screens/a_receber_screen.dart';
 import 'screens/cadastros_screen.dart';
@@ -46,6 +47,15 @@ class _HomeState extends State<Home> {
   int aba = 0;
   int visita = 0;
   final formKey = GlobalKey<PedidoFormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Verifica atualização em segundo plano ao abrir o app.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) verificarAtualizacao(context);
+    });
+  }
 
   void _trocar(int i) {
     setState(() {

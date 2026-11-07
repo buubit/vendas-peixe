@@ -1,0 +1,56 @@
+# Gera o APK a cada push na main. Quando a versão do pubspec.yaml muda,
+# publica uma Release nova — o app detecta e oferece o botão "Atualizar".
+name: Gerar APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.9
+          channel: stable
+          cache: true
+
+      # Mesma chave de assinatura do APK já instalado no celular
+      # (sem ela o Android recusa a atualização).
+      - name: Restaurar chave de assinatura
+        env:
+          KEYSTORE_B64: ${{ secrets.DEBUG_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then echo "Falta o secret DEBUG_KEYSTORE_B64"; exit 1; fi
+          mkdir -p ~/.android
+          echo "$KEYSTORE_B64" | base64 -d > ~/.android/debug.keystore
+
+      - run: flutter pub get
+      - run: flutter test
+      - run: flutter build apk --release
+
+      - name: Publicar release (se a versão for nova)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSAO=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          TAG="v${VERSAO/+/-b}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG já existe — nada a publicar (suba a versão no pubspec.yaml)."
+            exit 0
+          fi
+          cp build/app/outputs/flutter-apk/app-release.apk vendas-peixe.apk
+          git log -1 --pretty=%B > notas.txt
+          gh release create "$TAG" vendas-peixe.apk --title "Versão ${VERSAO%%+*}" --notes-file notas.txt
