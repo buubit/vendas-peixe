@@ -24,5 +24,7 @@ O app consulta `releases/latest` de `buubit/vendas-peixe` ao abrir (`lib/atualiz
 
 O CI (`.github/workflows/testes.yml`) só roda analyze e os testes.
 
+Histórico das versões e passo a passo para continuar em outro PC: `HISTORICO.md`.
+
 ## Ambiente no PC original
 As ferramentas portáteis ficam em `C:\dev` (Flutter 3.47.9, JDK 21, Android SDK, MinGit, gh). Antes de qualquer comando, carregue `. C:\dev\env.ps1`. Num PC novo, instale os mesmos componentes (o Flutter precisa do JDK 21, do Android SDK com platform 36/build-tools 36 e das licenças aceitas) e copie o `debug.keystore`.
