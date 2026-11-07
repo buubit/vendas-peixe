@@ -1,0 +1,22 @@
+# Roda os testes a cada push. O APK é gerado e publicado a partir do PC
+# (publicar.ps1), onde fica a chave de assinatura — ela nunca vai para o GitHub.
+name: Testes
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.9
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
