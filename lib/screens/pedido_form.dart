@@ -33,8 +33,14 @@ class PedidoFormState extends State<PedidoForm> {
 
   bool get modoPagina => widget.pedidoId != null;
 
-  /// Produtos que já têm preço para o cliente escolhido.
-  List<Peixe> get doCliente => peixes.where((p) => precos.containsKey(p.id)).toList();
+  Map<int, String> ultimas = {};
+
+  /// Produtos da tabela do cliente, os comprados mais recentemente primeiro.
+  List<Peixe> get doCliente {
+    final l = peixes.where((p) => precos.containsKey(p.id)).toList();
+    l.sort((a, b) => (ultimas[b.id] ?? '').compareTo(ultimas[a.id] ?? ''));
+    return l;
+  }
 
   Future<void> _buscarProduto() async {
     final p = await escolherProduto(context, peixes, precos: precos);
@@ -60,6 +66,7 @@ class PedidoFormState extends State<PedidoForm> {
     if (cliente != null) {
       cliente = await Db.cliente(cliente!.id!);
       precos = cliente == null ? {} : await Db.precos(cliente!.id!);
+      ultimas = cliente == null ? {} : await Db.ultimasCompras(cliente!.id!);
     }
     await _carregarDia();
     if (mounted) setState(() {});
@@ -75,6 +82,7 @@ class PedidoFormState extends State<PedidoForm> {
     if (p == null) return;
     cliente = await Db.cliente(p.clienteId);
     precos = await Db.precos(p.clienteId);
+    ultimas = await Db.ultimasCompras(p.clienteId);
     data = p.data;
     itens
       ..clear()
@@ -87,6 +95,7 @@ class PedidoFormState extends State<PedidoForm> {
     final c = await escolherCliente(context);
     if (c == null) return;
     final pr = await Db.precos(c.id!);
+    ultimas = await Db.ultimasCompras(c.id!);
     peixes = await Db.peixes(soAtivos: true);
     setState(() {
       cliente = c;
@@ -251,7 +260,7 @@ class PedidoFormState extends State<PedidoForm> {
           ),
           const SizedBox(height: 12),
           if (doCliente.isNotEmpty) ...[
-            Text('Produtos deste cliente', style: tema.textTheme.titleMedium),
+            Text('Produtos recentes', style: tema.textTheme.titleMedium),
             const SizedBox(height: 8),
           ],
           GridView.count(

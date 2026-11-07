@@ -116,7 +116,7 @@ class _BaixandoState extends State<_Baixando> {
               progresso = 1;
               terminou = true;
             case OtaStatus.PERMISSION_NOT_GRANTED_ERROR:
-              status = 'Permita "instalar apps desconhecidos" para o Vendas de Peixe e tente de novo.';
+              status = 'Permita "instalar apps desconhecidos" para o VDfish e tente de novo.';
               terminou = true;
             default:
               status = 'Não foi possível atualizar (${e.status.name}). Tente mais tarde.';

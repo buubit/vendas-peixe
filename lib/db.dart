@@ -133,6 +133,15 @@ class Db {
     return {for (final m in r) m['peixe_id'] as int: (m['preco'] as num).toDouble()};
   }
 
+  /// Última data (yyyy-MM-dd + id do pedido) em que cada produto foi vendido para o cliente.
+  static Future<Map<int, String>> ultimasCompras(int clienteId) async {
+    final r = await (await _d).rawQuery(
+        "SELECT i.peixe_id, MAX(p.data || '#' || printf('%09d', p.id)) AS ult FROM itens i "
+        'JOIN pedidos p ON p.id = i.pedido_id WHERE p.cliente_id = ? GROUP BY i.peixe_id',
+        [clienteId]);
+    return {for (final m in r) m['peixe_id'] as int: m['ult'] as String};
+  }
+
   static Future<void> salvarPreco(int clienteId, int peixeId, double preco) async {
     await (await _d).insert('precos', {'cliente_id': clienteId, 'peixe_id': peixeId, 'preco': preco},
         conflictAlgorithm: ConflictAlgorithm.replace);

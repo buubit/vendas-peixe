@@ -1,4 +1,4 @@
-# Vendas de Peixe
+# VDfish
 
 ## Instalar no celular (Android)
 1. Baixe o arquivo `vendas-peixe.apk` no celular.

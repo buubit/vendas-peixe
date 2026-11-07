@@ -115,4 +115,17 @@ void main() {
     final f = await Db.fechamentos(quinzena: const Quinzena(2026, 11, 1));
     expect(f.single.promos, 1);
   });
+
+  test('últimas compras do cliente por produto', () async {
+    final c = Cliente(nome: 'Caio');
+    await Db.salvarCliente(c);
+    final l = await Db.peixes();
+    final a = l[0], b = l[1];
+    ItemPedido it(Peixe p) => ItemPedido(peixeId: p.id!, nome: p.nome, unidade: 'kg', qtd: 1, preco: 10);
+    await Db.salvarPedido(Pedido(clienteId: c.id!, clienteNome: c.nome, data: DateTime(2026, 11, 1), itens: [it(a)]));
+    await Db.salvarPedido(Pedido(clienteId: c.id!, clienteNome: c.nome, data: DateTime(2026, 11, 3), itens: [it(b)]));
+    final u = await Db.ultimasCompras(c.id!);
+    expect(u[b.id]!.compareTo(u[a.id]!) > 0, isTrue);
+    expect(u.containsKey(l[2].id), isFalse);
+  });
 }

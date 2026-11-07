@@ -123,7 +123,7 @@ class _MaisScreenState extends State<MaisScreen> {
     await src.copy(dst);
     await SharePlus.instance.share(ShareParams(
       files: [XFile(dst)],
-      subject: 'Backup Vendas de Peixe ${br(hoje())}',
+      subject: 'Backup VDfish ${br(hoje())}',
     ));
   }
 
@@ -211,7 +211,7 @@ class _MaisScreenState extends State<MaisScreen> {
         ),
         const ListTile(
           leading: Icon(Icons.info_outline),
-          title: Text('Vendas de Peixe'),
+          title: Text('VDfish'),
           subtitle: Text('Dados salvos só neste celular. Faça backup com frequência.'),
         ),
       ]),
