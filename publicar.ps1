@@ -21,6 +21,6 @@ Copy-Item build\app\outputs\flutter-apk\app-release.apk vendas-peixe.apk -Force
 
 git push origin main
 if ($LASTEXITCODE -ne 0) { throw 'Falha no git push.' }
-gh release create $tag vendas-peixe.apk --title ("Versão " + ($versao -split '\+')[0]) --notes $notas
+gh release create $tag vendas-peixe.apk --title ("Versao " +($versao -split '\+')[0]) --notes $notas
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao criar a release.' }
 Write-Output "Publicado $tag"
